@@ -1,4 +1,4 @@
-package org.example.Server;
+package org.example.server;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -11,15 +11,13 @@ import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static org.example.Server.LoadConfig.getloadConfigPort;
+import static org.example.server.LoadConfig.getloadConfigPort;
 
 
 public class Server {
     private static final int PORT;
-    private static String nameUser;
     protected static Map<String, PrintWriter> clients = new HashMap<>();
     private static ExecutorService pool = Executors.newCachedThreadPool();
-    private static BufferedReader out;
     /*
     класс для создания лог-файла и логировния сообщений
      */
@@ -50,18 +48,8 @@ public class Server {
                     @Override
                     public void run() {
                         String name = null;
-                        try {
-                            Scanner in = new Scanner(clientSocket.getInputStream());
-                            PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
-                            /*
-                            Создание имени при подключении нового клиента,
-                             если у него нет имени или такое имя уже было добавлено
-                             */
-                            while (name == null || clients.containsKey(name)) {
-                                out.println("Create a name for the chat");
-                                logger.logMessage("Create a name for the chat");
-                                name = in.nextLine();
-                            }
+                        try (Scanner in = new Scanner(clientSocket.getInputStream()); PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true)) {
+                            name = creationName(in, out);
 
                             out.println("Name accepted " + name);
                             logger.logMessage("Name accepted " + name);
@@ -74,16 +62,7 @@ public class Server {
                             logger.logMessage("Message: " + name + " has joined");
 
                             String message;
-                            while (in.hasNextLine()) {
-                                message = in.nextLine();
-                                if (message.toLowerCase().startsWith("/exit")) {
-                                    break;
-                                }
-                                String formattedMessage = "Message: " + name + ": " + message;
-                                broadcastMessage(formattedMessage);
-                                logger.logMessage("Message: " + name + ": " + message);
-
-                            }
+                            sendingMessages(name, in);
                         } catch (Exception e) {
                             e.printStackTrace();
                         } finally {
@@ -101,13 +80,10 @@ public class Server {
                         }
                     }
                 });
-
-
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-
     }
 
     /*
@@ -117,5 +93,36 @@ public class Server {
         for (PrintWriter writer : clients.values()) {
             writer.println(message);
         }
+    }
+
+    /*
+     Создание имени при подключении нового клиента,
+     если у него нет имени или такое имя уже было добавлено
+     */
+    protected static String creationName(Scanner scanner, PrintWriter out) {
+        String name = null;
+        while (name == null || name.isEmpty() || clients.containsKey(name)) {
+            out.println("Create a name for the chat");
+            logger.logMessage("Create a name for the chat");
+            name = scanner.nextLine();
+        }
+        return name;
+    }
+
+    /*
+    Отправка сообщений
+     */
+    protected static void sendingMessages(String name, Scanner in) {
+        String message;
+        while (in.hasNextLine()) {
+            message = in.nextLine();
+            if (message.toLowerCase().startsWith("/exit")) {
+                break;
+            }
+            String formattedMessage = "Message: " + name + ": " + message;
+            broadcastMessage(formattedMessage);
+            logger.logMessage("Message: " + name + ": " + message);
+        }
+
     }
 }

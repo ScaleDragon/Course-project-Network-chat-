@@ -1,10 +1,10 @@
-package org.example.Client;
+package org.example.client;
 
 import java.io.*;
 import java.net.*;
 import java.util.*;
 
-import static org.example.Client.LoadConfig.getloadConfigPort;
+import static org.example.client.LoadConfig.getloadConfigPort;
 
 public class Client {
     private static final String SERVER_ADDRESS;

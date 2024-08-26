@@ -1,4 +1,4 @@
-package org.example.Server;
+package org.example.server;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -6,9 +6,6 @@ import java.io.IOException;
 
 public class LoadConfig {
     private static int namePort;
-
-    public LoadConfig() {
-    }
 
     public static int getloadConfigPort(String settings) {
         try (BufferedReader br = new BufferedReader(new FileReader(settings))) {
